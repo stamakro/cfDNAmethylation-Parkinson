@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-#from rutils import *
 import argparse
 from scipy.stats import spearmanr, mannwhitneyu
 from statsmodels.stats.multitest import multipletests
@@ -166,7 +165,7 @@ if __name__ == '__main__':
     allthresholds = np.array([])
 
     labelArchive = []
-    posteriorArchive = []
+    iorArchive = []
     predictionArchive = []
 
 
@@ -353,8 +352,7 @@ if __name__ == '__main__':
     ax[1].set_xlim(0,1.05)
     plt.tight_layout()
 
-    if not os.path.exists('../results'):
-        os.mkdir('../results/')
+    
     with open('../results/posteriors/%s.pkl' % args.dataset, 'wb') as f:
         pickle.dump({'thr': allthresholds, 'y': labelArchive, 'post': posteriorArchive}, f)
 
