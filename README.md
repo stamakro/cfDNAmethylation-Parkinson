@@ -20,4 +20,4 @@ numpy 1.26\
 scipy 1.10\
 sklearn 1.3\
 pandas 2.1\
-rpy2 3.5\
+rpy2 3.5
