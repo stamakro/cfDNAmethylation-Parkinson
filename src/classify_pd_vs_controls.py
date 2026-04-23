@@ -68,7 +68,7 @@ if __name__ == '__main__':
     # if methylation features are used, whether or not to restrict DMRs to hypermethlated in PD
     parser.add_argument('--positive-only', dest='pos', default=0, type=int)
     # path to external control dataset
-    parser.add_argument('--external-controls', dest='externalControls', default='../data/methylation_cpgi.pkl')
+    parser.add_argument('--external-controls', dest='externalControls', default='../data/external_controls.pkl')
 
 
     args = parser.parse_args()
@@ -352,8 +352,11 @@ if __name__ == '__main__':
     ax[1].set_xlim(0,1.05)
     plt.tight_layout()
 
-    
-    with open('../results/posteriors/%s.pkl' % args.dataset, 'wb') as f:
+    if args.dataset == 'medseq' and args.data.split('.')[0].split('_')[-1] == 'hyper':
+        name = 'hyper'
+    else:
+        name =args.dataset
+    with open('../results/posteriors/%s.pkl' % name, 'wb') as f:
         pickle.dump({'thr': allthresholds, 'y': labelArchive, 'post': posteriorArchive}, f)
 
 
@@ -520,109 +523,9 @@ if __name__ == '__main__':
     v3TPM = v3TPM[XtrainF.columns]
     print(np.mean(clf.predict(v3TPM)))
 
+    with open(args.externalControls, 'rb') as f:
+        hbdtpm = pickle.load(f)
 
-    hbd = pd.read_csv('/home/stavros/Desktop/code/medseq-backup/miracle-meth/data/hbd_cpgi.csv', index_col=0)
-    hbdtpm = counts2tpm(hbd.iloc[:27923].astype(int))
-    hbdtpm = np.log(hbdtpm.T + 1)
     hbdtpm = pd.DataFrame(ss.transform(hbdtpm), columns=cc, index=hbdtpm.index)
     hbdtpm = hbdtpm[XtrainF.columns]
     print(np.mean(clf.predict(hbdtpm)))
-
-    # ############################################################################################
-    # # link to cell types
-    # cc = fs.get_feature_names_out()
-    # dataS = np.array(dataTPM[cc])
-    # from scipy.stats import ttest_ind
-    # tstats, _ = ttest_ind(dataS[labels==0], dataS[labels==1])
-    #
-    # tstats = pd.Series(tstats, index=cc)
-    #
-    # cellTypeAtlasDMR = cellTypeAtlas[tstats.index]
-    # cellTypeAtlasDMR.dropna(axis=1, inplace=True)
-    #
-    # dmrs2noY = tstats.loc[cellTypeAtlasDMR.columns]
-    #
-    # rhos = np.zeros(cellTypeAtlas.shape[0])
-    # ps = np.zeros(cellTypeAtlas.shape[0])
-    # for i in range(rhos.shape[0]):
-    #     rhos[i], ps[i] = spearmanr(dmrs2noY, cellTypeAtlasDMR.iloc[i])
-    #
-    #
-    #
-    # tissues = pd.Series(cellTypeAtlasDMR.index).apply(gettissue)
-    # allTissues = sorted(tissues.unique())
-    #
-    # tissue2ind = dict()
-    # for t in allTissues:
-    #     tissue2ind[t] = np.where(tissues == t)[0]
-    #
-    # fig, ax = plt.subplots(1,1)
-    # figMean, axMean = plt.subplots(1,1)
-    #
-    # ax.axvline(-0.5, color='k', linestyle='--')
-    #
-    # xtick = []
-    # base = 0
-    # for i,t in enumerate(allTissues):
-    #     print(t)
-    #     rr = rhos[tissue2ind[t]]
-    #     n = rr.shape[0]
-    #     ax.bar(np.arange(n)+base, rr, color=('C%d' % (i%10)), linewidth=0.05)
-    #
-    #     ax.axvline(base+n-0.5, color='k', linestyle='--')
-    #     xtick.append((n//2) + base)
-    #
-    #     base += n
-    #
-    #     axMean.bar(i, np.mean(rr), yerr=np.std(rr, ddof=1), color=('C%d' % (i%10)))
-    #     axMean.errorbar(i, np.mean(rr), yerr=np.std(rr, ddof=1), color='k')
-    #
-    # ax.set_xticks(xtick)
-    # ax.set_xticklabels(allTissues, rotation=45)
-    #
-    # ax.set_ylabel('Correlation FC vs cell type methylation')
-    #
-    # axMean.set_xticks(np.arange(len(allTissues)))
-    # axMean.set_xticklabels(allTissues, rotation=45)
-
-    ##########################################################################
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=2)
-
-    x2 = pca.fit_transform(XtrainF)
-
-    fig, ax = plt.subplots(1,1)
-
-    ax.scatter(x2[labels==0,0], x2[labels==0,1], color='C0', label='HC')
-
-    pd2 = x2[labels==1]
-
-    patids = dataTPM.iloc[labels==1].index
-    lab = np.array(clinical.loc[patids]['v1_subtype_zCC'])
-
-    ax.scatter(pd2[lab=='1_Mild-Motor',0], pd2[lab=='1_Mild-Motor',1], color='C1', label='PD-motor', marker='s')
-    ax.scatter(pd2[lab=='2_Intermediate',0], pd2[lab=='2_Intermediate',1], color='C2', label='PD-inter', marker='s')
-    ax.scatter(pd2[lab=='3_Diffuse-Malignant',0], pd2[lab=='3_Diffuse-Malignant',1], color='C3', label='PD-diff', marker='s')
-
-    ax.legend()
-
-    Xpd = XtrainF[labels==1]
-
-    ind = np.where(np.logical_or((lab== '1_Mild-Motor'),(lab=='3_Diffuse-Malignant')))[0]
-
-    Xpd = Xpd[ind]
-    lab = lab[ind]
-
-    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-    for i, (trainInd, testInd) in enumerate(cv.split(Xpd, lab)):
-        Xtrain = Xpd[trainInd]
-        ytrain = lab[trainInd]
-
-        Xtest = Xpd[testInd]
-        ytest = lab[testInd]
-
-        clf = LinearSVC(max_iter=5000)
-        clf.fit(Xtrain, ytrain)
-        print('\n%d' % i)
-        print(clf.score(Xtrain, ytrain))
-        print(clf.score(Xtest, ytest))
