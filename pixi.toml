@@ -1,0 +1,31 @@
+[project]
+authors = ["Stavros Makrodimitris"]
+channels = ["conda-forge", "bioconda"]
+name = "parkinson_methylation_environment"
+platforms = ["win-64"]
+version = "0.1.0"
+preview = ["pixi-build"]
+
+[tasks]
+
+[dependencies]
+python = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+pip = "*"
+wheel  = "*"
+cython  = "*"
+ipython = "*"
+ipykernel = "*"
+ipywidgets = "*"
+ipympl = "*"
+notebook = "*"
+jupytext = "*"
+networkx = "*"
+statsmodels = "*"
+tqdm = "*"
+scikit-learn = "*"
+
+[pypi-dependencies]
+rutils = "*"
